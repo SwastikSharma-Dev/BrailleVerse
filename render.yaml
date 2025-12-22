@@ -3,7 +3,7 @@ services:
     name: brailleverse
     runtime: python
     plan: free
-    buildCommand: pip install -r requirements.txt
+    buildCommand: chmod +x build.sh && ./build.sh
     startCommand: gunicorn braille_project.wsgi:application
     envVars:
       - key: PYTHON_VERSION
@@ -20,3 +20,4 @@ services:
         value: JmfhE3a7bXgX93GxdliKbI3uRbE5DpU2FGi45MZM
       - key: GEMINI_API_KEY
         value: AIzaSyB_d6gCTITpLZM7MvEKjrcg0J3LLxMNUuM
+    staticPublishPath: ./staticfiles
