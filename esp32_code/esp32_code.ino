@@ -1,93 +1,121 @@
+#include <Arduino.h>
+#include <Wire.h>
 #include <WiFi.h>
-#include <FirebaseESP32.h> // Install "Firebase ESP32 Client" by Mobizt
+#include <FirebaseESP32.h>
+#include <Adafruit_PWMServoDriver.h>
 
 // ----- WiFi credentials -----
-#define WIFI_SSID "iFiW"
-#define WIFI_PASSWORD "ABCD1234"
+#define WIFI_SSID "TU"
+#define WIFI_PASSWORD "tu@inet1"
 
 // ----- Firebase credentials -----
-#define FIREBASE_HOST "braille-display-b87be-default-rtdb.asia-southeast1.firebasedatabase.app" // e.g., braille-display.firebaseio.com
-#define FIREBASE_AUTH "JmfhE3a7bXgX93GxdliKbI3uRbE5DpU2FGi45MZM" // In Realtime Database -> Rules (legacy token)
+#define FIREBASE_HOST "braille-display-b87be-default-rtdb.asia-southeast1.firebasedatabase.app"
+#define FIREBASE_AUTH "JmfhE3a7bXgX93GxdliKbI3uRbE5DpU2FGi45MZM"
+
+// ----- Pin Definitions -----
+#define BUTTON_PIN 35
 
 // ----- Firebase objects -----
 FirebaseData fbdo;
 FirebaseAuth auth;
 FirebaseConfig config;
 
-// Braille patterns: each char → 2x3 boolean matrix
-// Dots numbered:
-// 1 4
-// 2 5
-// 3 6
-// true = raised, false = flat
-struct BrailleChar {
-  bool dots[6];
-};
+// ----- PCA9685 -----
+Adafruit_PWMServoDriver pca1 = Adafruit_PWMServoDriver(0x40);
+Adafruit_PWMServoDriver pca2 = Adafruit_PWMServoDriver(0x41);
 
-// Lookup table for letters a–z
+uint16_t pwmSpeed = 2000;
+int currentPos = 0;          
+int lastButtonState = LOW;   
+String fullText = "";        
+
+struct BrailleChar { bool dots[6]; };
+
 BrailleChar brailleAlphabet[] = {
-  {{1,0,0,0,0,0}}, // a
-  {{1,1,0,0,0,0}}, // b
-  {{1,0,0,1,0,0}}, // c
-  {{1,0,0,1,1,0}}, // d
-  {{1,0,0,0,1,0}}, // e
-  {{1,1,0,1,0,0}}, // f
-  {{1,1,0,1,1,0}}, // g
-  {{1,1,0,0,1,0}}, // h
-  {{0,1,0,1,0,0}}, // i
-  {{0,1,0,1,1,0}}, // j
-  {{1,0,1,0,0,0}}, // k
-  {{1,1,1,0,0,0}}, // l
-  {{1,0,1,1,0,0}}, // m
-  {{1,0,1,1,1,0}}, // n
-  {{1,0,1,0,1,0}}, // o
-  {{1,1,1,1,0,0}}, // p
-  {{1,1,1,1,1,0}}, // q
-  {{1,1,1,0,1,0}}, // r
-  {{0,1,1,1,0,0}}, // s
-  {{0,1,1,1,1,0}}, // t
-  {{1,0,1,0,0,1}}, // u
-  {{1,1,1,0,0,1}}, // v
-  {{0,1,0,1,1,1}}, // w
-  {{1,0,1,1,0,1}}, // x
-  {{1,0,1,1,1,1}}, // y
-  {{1,0,1,0,1,1}}  // z
+  {{1,0,0,0,0,0}}, {{1,1,0,0,0,0}}, {{1,0,0,1,0,0}}, {{1,0,0,1,1,0}}, 
+  {{1,0,0,0,1,0}}, {{1,1,0,1,0,0}}, {{1,1,0,1,1,0}}, {{1,1,0,0,1,0}}, 
+  {{0,1,0,1,0,0}}, {{0,1,0,1,1,0}}, {{1,0,1,0,0,0}}, {{1,1,1,0,0,0}}, 
+  {{1,0,1,1,0,0}}, {{1,0,1,1,1,0}}, {{1,0,1,0,1,0}}, {{1,1,1,1,0,0}}, 
+  {{1,1,1,1,1,0}}, {{1,1,1,0,1,0}}, {{0,1,1,1,0,0}}, {{0,1,1,1,1,0}}, 
+  {{1,0,1,0,0,1}}, {{1,1,1,0,0,1}}, {{0,1,0,1,1,1}}, {{1,0,1,1,0,1}}, 
+  {{1,0,1,1,1,1}}, {{1,0,1,0,1,1}}                                    
 };
 
-void printBrailleGrid(char c) {
-  if (c >= 'A' && c <= 'Z') c += 32; // convert to lowercase
+// ----- Mapping Helper Function -----
+// This handles the 9,8,11,10 swap logic
+int getSwappedPin(int pin) {
+  if (pin % 2 == 0) return pin + 1; // 0->1, 8->9, 10->11
+  else return pin - 1;             // 1->0, 9->8, 11->10
+}
+
+void stopAllMotors() {
+  for (int i = 8; i < 16; i++) pca1.setPWM(i, 0, 0);
+  for (int i = 0; i < 16; i++) pca2.setPWM(i, 0, 0);
+}
+
+void driveBrailleCell(int cellIndex, char c, uint16_t pwmValue) {
+  if (c >= 'A' && c <= 'Z') c += 32; 
 
   BrailleChar b;
-
   if (c < 'a' || c > 'z') {
-    // Unknown character → all zeros
     for (int i = 0; i < 6; i++) b.dots[i] = 0;
   } else {
-    int index = c - 'a';
-    b = brailleAlphabet[index];
+    b = brailleAlphabet[c - 'a'];
   }
 
-  // Print 2x3 grid
-  Serial.println("------");
-  Serial.printf("%c:\n", c);
-  Serial.printf("%d %d\n", b.dots[0], b.dots[3]); // Row 1: dots 1,4
-  Serial.printf("%d %d\n", b.dots[1], b.dots[4]); // Row 2: dots 2,5
-  Serial.printf("%d %d\n", b.dots[2], b.dots[5]); // Row 3: dots 3,6
+  for (int dot = 0; dot < 6; dot++) {
+    int virtualIndex = (cellIndex * 6) + dot; 
+    
+    if (virtualIndex < 8) {
+      // PCA1 logic (Pin 8-15) with swapped order
+      int physicalPin = getSwappedPin(virtualIndex + 8);
+      pca1.setPWM(physicalPin, 0, b.dots[dot] ? pwmValue : 0);
+    } 
+    else {
+      // PCA2 logic (Pin 0-15) with swapped order
+      int physicalPin = getSwappedPin(virtualIndex - 8);
+      pca2.setPWM(physicalPin, 0, b.dots[dot] ? pwmValue : 0);
+    }
+  }
+}
+
+String filterText(String input) {
+  String filtered = "";
+  for (int i = 0; i < input.length(); i++) {
+    char c = input[i];
+    if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
+      filtered += c;
+    }
+  }
+  return filtered;
+}
+
+void displayCurrentWindow() {
+  Serial.printf("\n--- Window: %d to %d ---\n", currentPos, currentPos + 3);
+  for (int i = 0; i < 4; i++) {
+    int charIdx = currentPos + i;
+    char c = (charIdx < fullText.length()) ? fullText[charIdx] : ' ';
+    driveBrailleCell(i, c, pwmSpeed);
+    Serial.print(c);
+  }
+  Serial.println("\n--------------------");
 }
 
 void setup() {
   Serial.begin(115200);
+  pinMode(BUTTON_PIN, INPUT_PULLDOWN);
 
-  // WiFi
+  pca1.begin();
+  pca1.setPWMFreq(200);
+  pca2.begin();
+  pca2.setPWMFreq(200);
+
+  stopAllMotors();
+  
+  WiFi.mode(WIFI_STA);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-  Serial.print("Connecting to Wi-Fi");
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-  Serial.println("\nConnected to Wi-Fi");
+  while (WiFi.status() != WL_CONNECTED) { delay(500); Serial.print("."); }
 
-  // Firebase setup
   config.host = FIREBASE_HOST;
   config.signer.tokens.legacy_token = FIREBASE_AUTH;
   Firebase.begin(&config, &auth);
@@ -96,55 +124,22 @@ void setup() {
 
 void loop() {
   if (Firebase.getString(fbdo, "/brailleText")) {
-    String text = fbdo.stringData();
-    Serial.println("Received: " + text);
-    for (size_t i = 0; i < text.length(); i++) {
-      printBrailleGrid(text[i]);
-      delay(500);
-    }
-  } else {
-    Serial.println("Firebase read failed: " + fbdo.errorReason());
-  }
-  delay(2000); // check every 2s
-}
-
-  WiFi.disconnect(true);  // Clear old credentials
-  delay(1000);
-
-  Serial.printf("Connecting to %s...\n", WIFI_SSID);
-  WiFi.mode(WIFI_STA); // Station mode (ESP32 as client)
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-
-  int retries = 0;
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(1000);
-    Serial.print("Connecting");
-    for (int i = 0; i < 3; i++) { Serial.print("."); delay(300); }
-    Serial.println();
-
-    int status = WiFi.status();
-    if (status == WL_NO_SSID_AVAIL) Serial.println("⚠ SSID not found!");
-    if (status == WL_CONNECT_FAILED) Serial.println("⚠ Wrong password?");
-    if (status == WL_DISCONNECTED) Serial.println("⚠ Disconnected");
-
-    retries++;
-    if (retries > 20) {
-      Serial.println("❌ Failed to connect, restarting...");
-      ESP.restart(); // Restart if can't connect after ~20 sec
+    String cleaned = filterText(fbdo.stringData());
+    if (cleaned != fullText) {
+      fullText = cleaned;
+      currentPos = 0; 
+      displayCurrentWindow();
     }
   }
 
-  Serial.println("✅ Connected to Wi-Fi!");
-  Serial.print("IP address: ");
-  Serial.println(WiFi.localIP());
-}
-
-void setup() {
-  Serial.begin(115200);
-  delay(500);
-  connectToWiFi();
-}
-
-void loop() {
-  // Your main code here
+  int currentButtonState = digitalRead(BUTTON_PIN);
+  if (currentButtonState == HIGH && lastButtonState == LOW) {
+    if (fullText.length() > 0) {
+      currentPos += 4;
+      if (currentPos >= fullText.length()) currentPos = 0;
+      displayCurrentWindow();
+    }
+  }
+  lastButtonState = currentButtonState;
+  delay(50); 
 }
