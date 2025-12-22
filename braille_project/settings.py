@@ -161,7 +161,7 @@ GOOGLE_BOOKS_API_KEY = 'YOUR_GOOGLE_BOOKS_API_KEY_HERE'  # Replace with your act
 
 # Google Gemini API Configuration
 # Get your API key from: https://makersuite.google.com/app/apikey
-GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', 'AIzaSyBOsgOQgjI2INSoMIDNXpL9vObNrXJ3iQg')
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', 'AIzaSyBrEDIjj2Zen0-K1UseVMKUQrAPVOrpxg0')
 
 # API Settings
 NEWS_API_ARTICLES_PER_CATEGORY = 5

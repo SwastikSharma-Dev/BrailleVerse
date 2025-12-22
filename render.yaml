@@ -19,4 +19,4 @@ services:
       - key: FIREBASE_AUTH_TOKEN
         value: JmfhE3a7bXgX93GxdliKbI3uRbE5DpU2FGi45MZM
       - key: GEMINI_API_KEY
-        value: AIzaSyBOsgOQgjI2INSoMIDNXpL9vObNrXJ3iQg
+        value: AIzaSyBrEDIjj2Zen0-K1UseVMKUQrAPVOrpxg0
