@@ -10,12 +10,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-replace-this-with-your-own-secret-key-in-production'
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-replace-this-with-your-own-secret-key-in-production')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',')
 
 
 # Application definition
@@ -32,6 +32,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -107,6 +108,10 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [
     BASE_DIR / 'braille_app' / 'static',
 ]
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# WhiteNoise configuration for production
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Default primary key field type
 
@@ -156,7 +161,7 @@ GOOGLE_BOOKS_API_KEY = 'YOUR_GOOGLE_BOOKS_API_KEY_HERE'  # Replace with your act
 
 # Google Gemini API Configuration
 # Get your API key from: https://makersuite.google.com/app/apikey
-GEMINI_API_KEY = 'AIzaSyB_d6gCTITpLZM7MvEKjrcg0J3LLxMNUuM'
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', 'AIzaSyB_d6gCTITpLZM7MvEKjrcg0J3LLxMNUuM')
 
 # API Settings
 NEWS_API_ARTICLES_PER_CATEGORY = 5

@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: brailleverse
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn braille_project.wsgi:application
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: False
+      - key: ALLOWED_HOSTS
+        sync: false
+      - key: FIREBASE_DATABASE_URL
+        value: https://braille-display-b87be-default-rtdb.asia-southeast1.firebasedatabase.app
+      - key: FIREBASE_AUTH_TOKEN
+        value: JmfhE3a7bXgX93GxdliKbI3uRbE5DpU2FGi45MZM
+      - key: GEMINI_API_KEY
+        value: AIzaSyB_d6gCTITpLZM7MvEKjrcg0J3LLxMNUuM
