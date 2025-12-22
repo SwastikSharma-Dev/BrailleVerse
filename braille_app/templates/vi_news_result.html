@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ category }} News Sent{% endblock %}
+
+{% block content %}
+<div class="result-panel">
+    <div class="result-icon">✅</div>
+    <div class="result-message">{{ category }} News Sent to Your Device!</div>
+    <div class="result-details">
+        <p>{{ send_result.message }}</p>
+        <p style="margin-top: 2rem;">Sent {{ send_result.chunks_sent }} of {{ send_result.total_chunks }} chunks</p>
+    </div>
+    
+    <a href="{% url 'vi_news' %}" class="form-button" style="margin-top: 3rem;">SELECT ANOTHER CATEGORY</a>
+    <a href="{% url 'visually_impaired_menu' %}" class="form-button">BACK TO MENU</a>
+</div>
+{% endblock %}

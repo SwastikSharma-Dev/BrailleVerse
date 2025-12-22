@@ -1,0 +1,62 @@
+{% extends "base_new.html" %}
+{% load static %}
+
+{% block title %}Popular Books{% endblock %}
+
+{% block content %}
+<div class="panel-container four-panels">
+    {% for book in books %}
+    <div class="panel" role="button" aria-label="Read {{ book.title }} by {{ book.author }}" tabindex="0" onclick="sendBook('{{ book.id }}')">
+        <div class="panel-icon">📖</div>
+        <div class="panel-title">{{ book.title }}</div>
+        <div class="panel-description">by {{ book.author }}</div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Back Button -->
+<a href="{% url 'visually_impaired_menu' %}" class="back-button" role="button" aria-label="Go back">← BACK</a>
+
+<div class="sr-only" role="status" aria-live="polite">
+    {{ instruction }}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function sendBook(bookId) {
+    const formData = new FormData();
+    formData.append('book_id', bookId);
+    
+    fetch('{% url "vi_books" %}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            speak('Book sent to braille device successfully');
+            setTimeout(() => {
+                window.location.href = '{% url "visually_impaired_menu" %}';
+            }, 2000);
+        } else {
+            speak('Error sending book');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        speak('Connection error');
+    });
+}
+
+function speak(text) {
+    if ('speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance(text);
+        window.speechSynthesis.speak(utterance);
+    }
+}
+</script>
+{% endblock %}

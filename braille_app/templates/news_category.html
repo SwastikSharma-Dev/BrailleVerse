@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}{{ category }} News - Braille Display{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 data-speak-on-load="{{ instruction }}">{{ category }} News</h1>
+    <p class="instruction" role="heading" aria-level="2">
+        {{ instruction }}
+    </p>
+</div>
+
+<div class="content-area">
+    <ul class="article-list" role="list">
+        {% for article in articles %}
+        <li class="article-item" role="listitem">
+            <article>
+                <h2 class="article-title">{{ article.title }}</h2>
+                <p class="article-content">{{ article.content }}</p>
+                
+                <form method="post" style="margin-top: 1.5rem;">
+                    {% csrf_token %}
+                    <input type="hidden" name="article_text" value="{{ article.title }}. {{ article.content }}">
+                    <button 
+                        type="submit" 
+                        class="button"
+                        style="min-width: auto; min-height: 60px;"
+                        aria-label="Send {{ article.title }} to braille device">
+                        📤 Send to Braille Device
+                    </button>
+                </form>
+            </article>
+        </li>
+        {% endfor %}
+    </ul>
+    
+    <div class="button-list" style="margin-top: 3rem;">
+        <a 
+            href="{% url 'news' %}" 
+            class="button"
+            role="button"
+            aria-label="Back to news categories">
+            ← Back to News Categories
+        </a>
+        
+        <a 
+            href="{% url 'main_menu' %}" 
+            class="button"
+            role="button"
+            aria-label="Return to main menu">
+            🏠 Main Menu
+        </a>
+    </div>
+</div>
+
+<!-- Screen reader announcements -->
+<div class="sr-only" aria-live="polite" aria-atomic="true">
+    {{ articles|length }} article{% if articles|length != 1 %}s{% endif %} available in {{ category }}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Handle article sending
+    document.querySelectorAll('.article-item form').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const csrfToken = formData.get('csrfmiddlewaretoken');
+            const articleText = formData.get('article_text');
+            
+            if (window.voiceNavigator) {
+                window.voiceNavigator.speak('Sending article to your braille device...');
+            }
+            
+            fetch('', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    if (window.voiceNavigator) {
+                        window.voiceNavigator.speak('Article successfully sent to braille device.');
+                    }
+                    alert('✅ Article sent to braille device!');
+                } else {
+                    if (window.voiceNavigator) {
+                        window.voiceNavigator.speak('Error sending article.');
+                    }
+                    alert('❌ Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                if (window.voiceNavigator) {
+                    window.voiceNavigator.speak('Error sending article.');
+                }
+                alert('❌ Error sending article');
+            });
+        });
+    });
+</script>
+{% endblock %}

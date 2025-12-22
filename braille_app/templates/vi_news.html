@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}News Categories{% endblock %}
+
+{% block content %}
+<div class="panel-container four-panels">
+    <!-- Headlines Panel -->
+    <a href="{% url 'vi_news_category' 'headlines' %}" class="panel" role="button" aria-label="Top Headlines" tabindex="0">
+        <div class="panel-icon">🌟</div>
+        <div class="panel-title">HEADLINES</div>
+        <div class="panel-description">Top News Stories</div>
+    </a>
+    
+    <!-- Technology Panel -->
+    <a href="{% url 'vi_news_category' 'technology' %}" class="panel" role="button" aria-label="Technology News" tabindex="0">
+        <div class="panel-icon">💻</div>
+        <div class="panel-title">TECHNOLOGY</div>
+        <div class="panel-description">Tech Updates</div>
+    </a>
+    
+    <!-- Sports Panel -->
+    <a href="{% url 'vi_news_category' 'sports' %}" class="panel" role="button" aria-label="Sports News" tabindex="0">
+        <div class="panel-icon">⚽</div>
+        <div class="panel-title">SPORTS</div>
+        <div class="panel-description">Sports Updates</div>
+    </a>
+    
+    <!-- Business Panel -->
+    <a href="{% url 'vi_news_category' 'business' %}" class="panel" role="button" aria-label="Business News" tabindex="0">
+        <div class="panel-icon">💼</div>
+        <div class="panel-title">BUSINESS</div>
+        <div class="panel-description">Business News</div>
+    </a>
+</div>
+
+<!-- Back Button -->
+<a href="{% url 'visually_impaired_menu' %}" class="back-button" role="button" aria-label="Go back">← BACK</a>
+
+<div class="sr-only" role="status" aria-live="polite">
+    {{ instruction }}
+</div>
+{% endblock %}

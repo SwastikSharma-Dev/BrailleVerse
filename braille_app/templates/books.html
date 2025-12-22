@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}Books - Braille Display{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 data-speak-on-load="{{ instruction }}">Books Library</h1>
+    <p class="instruction" role="heading" aria-level="2">
+        {{ instruction }}
+    </p>
+</div>
+
+<div class="content-area">
+    <!-- Search Form -->
+    <form method="GET" action="{% url 'books' %}" class="search-form" style="margin-bottom: 2rem;">
+        <div class="form-group">
+            <label for="search" class="form-label" style="font-size: 1.5rem; margin-bottom: 1rem; display: block;">
+                Search for Books:
+            </label>
+            <div style="display: flex; gap: 1rem; align-items: center;">
+                <input 
+                    type="text" 
+                    id="search" 
+                    name="search" 
+                    value="{{ search_query }}"
+                    placeholder="Enter book title or author"
+                    class="form-control"
+                    aria-label="Search for books by title or author"
+                    style="flex: 1; padding: 1rem; font-size: 1.3rem; border: 3px solid #000; border-radius: 8px;">
+                <button 
+                    type="submit" 
+                    class="button"
+                    aria-label="Search books"
+                    style="padding: 1rem 2rem; font-size: 1.3rem;">
+                    🔍 Search
+                </button>
+            </div>
+        </div>
+    </form>
+
+    {% if search_performed %}
+        <div class="search-results-info" style="margin-bottom: 1.5rem; font-size: 1.3rem;">
+            <p role="status" aria-live="polite">
+                {% if books %}
+                    Found {{ books|length }} result{{ books|length|pluralize }} for "{{ search_query }}"
+                {% else %}
+                    No books found for "{{ search_query }}". Try a different search.
+                {% endif %}
+            </p>
+        </div>
+    {% endif %}
+
+    <div class="book-list">
+        {% for book in books %}
+            <a 
+                href="{% url 'book_reader' book.id %}" 
+                class="book-item"
+                role="button"
+                aria-label="Read {{ book.title }} by {{ book.author }}">
+                <div class="book-title">📖 {{ book.title }}</div>
+                <div class="book-author">by {{ book.author }}</div>
+                {% if book.description %}
+                    <div class="book-description" style="font-size: 1.1rem; margin-top: 0.5rem; color: #333;">
+                        {{ book.description }}
+                    </div>
+                {% endif %}
+            </a>
+        {% endfor %}
+    </div>
+    
+    <div class="button-list" style="margin-top: 3rem;">
+        <a 
+            href="{{ back_option.url }}" 
+            class="button"
+            role="button"
+            aria-label="{{ back_option.title }}">
+            ← {{ back_option.title }}
+        </a>
+    </div>
+</div>
+
+<!-- Screen reader announcements -->
+<div class="sr-only" aria-live="polite" aria-atomic="true">
+    {{ books|length }} books available{% if search_performed %} for search "{{ search_query }}"{% endif %}
+</div>
+{% endblock %}

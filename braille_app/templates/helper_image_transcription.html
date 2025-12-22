@@ -1,0 +1,341 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Image Transcription{% endblock %}
+
+{% block content %}
+<div class="form-panel">
+    <h1 class="form-title">🖼️ IMAGE TRANSCRIPTION</h1>
+    
+    <div class="form-group">
+        <label class="form-label">Select Image File:</label>
+        <input 
+            type="file" 
+            id="imageFile" 
+            class="form-file" 
+            accept="image/*"
+            aria-label="Select image file to describe"
+        />
+    </div>
+    
+    <button class="form-button" onclick="uploadImage()">DESCRIBE IMAGE</button>
+    
+    <div id="result" class="result-display"></div>
+</div>
+
+<!-- Back Button -->
+<a href="{% url 'helper_menu' %}" class="back-button" role="button" aria-label="Go back">← BACK</a>
+
+<div class="sr-only" role="status" aria-live="polite">
+    {{ instruction }}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function uploadImage() {
+    const fileInput = document.getElementById('imageFile');
+    const file = fileInput.files[0];
+    
+    if (!file) {
+        speak('Error. Please select an image file');
+        alert('Please select an image file first');
+        return;
+    }
+    
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/bmp'];
+    if (!validTypes.includes(file.type)) {
+        const errorMsg = 'Error. Invalid file format. Please select a valid image file like JPEG, PNG, or GIF.';
+        document.getElementById('result').innerHTML = 
+            '<div style="padding: 2rem; border: 2px solid #ff4444; border-radius: 8px; margin-top: 2rem;">' +
+            '<h3 style="font-size: 1.8rem; color: #ff4444;">❌ INVALID FILE FORMAT</h3>' +
+            '<p style="font-size: 1.2rem;">Only image files (JPEG, PNG, GIF, WebP, BMP) are supported.</p>' +
+            '<p style="font-size: 1rem; margin-top: 1rem; opacity: 0.8;">Your file: ' + file.name + '</p>' +
+            '</div>';
+        speak(errorMsg);
+        return;
+    }
+    
+    // Validate file size (max 10MB)
+    const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+    if (file.size > maxSize) {
+        const errorMsg = 'Error. File is too large. Maximum size is 10 megabytes.';
+        document.getElementById('result').innerHTML = 
+            '<div style="padding: 2rem; border: 2px solid #ff4444; border-radius: 8px; margin-top: 2rem;">' +
+            '<h3 style="font-size: 1.8rem; color: #ff4444;">❌ FILE TOO LARGE</h3>' +
+            '<p style="font-size: 1.2rem;">Maximum file size is 10MB.</p>' +
+            '<p style="font-size: 1rem; margin-top: 1rem; opacity: 0.8;">Your file size: ' + (file.size / (1024 * 1024)).toFixed(2) + ' MB</p>' +
+            '</div>';
+        speak(errorMsg);
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('image_file', file);
+    
+    document.getElementById('result').innerHTML = '<div class="loading-spinner"></div><p style="font-size: 1.5rem; margin-top: 1rem;">AI is analyzing the image...</p>';
+    speak('Processing image with AI');
+    
+    fetch('{% url "helper_image_transcription" %}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Server error: ' + response.status);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.status === 'success') {
+            // Show AI description immediately with proper text wrapping
+            document.getElementById('result').innerHTML = 
+                '<div style="text-align: left; padding: 2rem; border: 2px solid var(--panel-border); border-radius: 8px; margin-top: 2rem; max-height: 60vh; overflow-y: auto;">' +
+                '<h3 style="font-size: 1.8rem; margin-bottom: 1rem; color: #44ff44;">✅ AI DESCRIPTION:</h3>' +
+                '<p style="font-size: 1.2rem; line-height: 1.8; margin-bottom: 1.5rem; word-wrap: break-word; white-space: pre-wrap;">' + data.description + '</p>' +
+                '<div id="sendStatus" style="margin-top: 1rem;"></div>' +
+                '</div>';
+            
+            // Ask if user wants to read it
+            askToRead(data.description, data.firebase_result);
+        } else {
+            document.getElementById('result').innerHTML = 
+                '<div style="padding: 2rem; border: 2px solid #ff4444; border-radius: 8px; margin-top: 2rem;">' +
+                '<h3 style="font-size: 1.8rem; color: #ff4444;">❌ ERROR</h3>' +
+                '<p style="font-size: 1.2rem;">' + (data.message || data.description || 'Unknown error occurred') + '</p>' +
+                '</div>';
+            speak('Error processing image. ' + (data.message || data.description || 'Unknown error occurred'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        document.getElementById('result').innerHTML = 
+            '<div style="padding: 2rem; border: 2px solid #ff4444; border-radius: 8px; margin-top: 2rem;">' +
+            '<h3 style="font-size: 1.8rem; color: #ff4444;">❌ CONNECTION ERROR</h3>' +
+            '<p style="font-size: 1.2rem;">Please check your internet connection and try again.</p>' +
+            '<p style="font-size: 1rem; margin-top: 1rem; opacity: 0.8;">Error details: ' + error.message + '</p>' +
+            '</div>';
+        speak('Error. Connection error. Please check your internet connection and try again.');
+    });
+}
+
+function voiceUpload() {
+    const fileInput = document.getElementById('imageFile');
+    if (!fileInput.files[0]) {
+        speak('Please select an image file first');
+        alert('Please select an image file first');
+        return;
+    }
+    
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+        speak('Voice recognition not supported');
+        alert('Voice recognition not supported in this browser');
+        return;
+    }
+    
+    if (isVoiceListening) {
+        voiceRecognition.stop();
+        isVoiceListening = false;
+        document.querySelector('.voice-input-button').classList.remove('listening');
+        document.querySelector('.voice-input-button').textContent = '🎤 SAY "SEND"';
+        return;
+    }
+    
+    voiceRecognition = new SpeechRecognition();
+    voiceRecognition.continuous = false;
+    voiceRecognition.interimResults = false;
+    
+    document.querySelector('.voice-input-button').classList.add('listening');
+    document.querySelector('.voice-input-button').textContent = '🔴 LISTENING...';
+    speak('Say send to upload the image');
+    isVoiceListening = true;
+    
+    voiceRecognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript.toLowerCase();
+        console.log('Voice command:', transcript);
+        
+        if (transcript.includes('send') || transcript.includes('submit') || transcript.includes('upload')) {
+            speak('Uploading image');
+            uploadImage();
+        } else {
+            speak('Command not recognized. Say send to upload');
+        }
+        
+        isVoiceListening = false;
+        document.querySelector('.voice-input-button').classList.remove('listening');
+        document.querySelector('.voice-input-button').textContent = '🎤 SAY "SEND"';
+    };
+    
+    voiceRecognition.onerror = (event) => {
+        console.error('Voice error:', event.error);
+        speak('Voice recognition error');
+        isVoiceListening = false;
+        document.querySelector('.voice-input-button').classList.remove('listening');
+        document.querySelector('.voice-input-button').textContent = '🎤 SAY "SEND"';
+    };
+    
+    voiceRecognition.onend = () => {
+        isVoiceListening = false;
+        document.querySelector('.voice-input-button').classList.remove('listening');
+        document.querySelector('.voice-input-button').textContent = '🎤 SAY "SEND"';
+    };
+    
+    voiceRecognition.start();
+}
+
+function askToRead(description, firebaseResult) {
+    // Ask user if they want the description read aloud
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    
+    speak('Image analyzed. Would you like me to read the description? Say yes or no.');
+    
+    if (!SpeechRecognition) {
+        // No voice recognition, just show Firebase status
+        setTimeout(() => {
+            showFirebaseStatus(firebaseResult);
+        }, 3000);
+        return;
+    }
+    
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+    
+    let hasResponded = false;
+    
+    recognition.onresult = (event) => {
+        const result = event.results[event.results.length - 1];
+        if (result.isFinal && !hasResponded) {
+            const transcript = result[0].transcript.toLowerCase();
+            console.log('User response:', transcript);
+            
+            hasResponded = true;
+            recognition.stop();
+            
+            if (transcript.includes('yes') || transcript.includes('yeah') || transcript.includes('sure') || transcript.includes('read')) {
+                // Read the description with stop command support
+                speakWithStopCommand('Reading description. ' + description, () => {
+                    showFirebaseStatus(firebaseResult);
+                });
+            } else if (transcript.includes('no') || transcript.includes('skip') || transcript.includes('nope')) {
+                speak('Skipping description');
+                showFirebaseStatus(firebaseResult);
+            } else {
+                // Default to showing Firebase status if unclear
+                showFirebaseStatus(firebaseResult);
+            }
+        }
+    };
+    
+    recognition.onerror = (event) => {
+        console.error('Recognition error:', event.error);
+        if (!hasResponded) {
+            hasResponded = true;
+            showFirebaseStatus(firebaseResult);
+        }
+    };
+    
+    recognition.onend = () => {
+        // Ensure Firebase status is shown if nothing happened
+        setTimeout(() => {
+            if (!hasResponded && !document.getElementById('sendStatus').innerHTML) {
+                hasResponded = true;
+                showFirebaseStatus(firebaseResult);
+            }
+        }, 2000);
+    };
+    
+    // Start listening after a brief delay
+    setTimeout(() => {
+        try {
+            recognition.start();
+        } catch (e) {
+            console.error('Recognition start error:', e);
+            showFirebaseStatus(firebaseResult);
+        }
+    }, 2500);
+}
+
+function speakWithStopCommand(text, onComplete) {
+    // Cancel any ongoing speech
+    window.speechSynthesis.cancel();
+    
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 0.9;
+    
+    // Set up voice recognition to listen for "stop" command
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let stopRecognition = null;
+    
+    if (SpeechRecognition) {
+        stopRecognition = new SpeechRecognition();
+        stopRecognition.continuous = true;
+        stopRecognition.interimResults = true;
+        stopRecognition.lang = 'en-US';
+        
+        stopRecognition.onresult = (event) => {
+            const result = event.results[event.results.length - 1];
+            const transcript = result[0].transcript.toLowerCase();
+            
+            if (transcript.includes('stop') || transcript.includes('pause') || transcript.includes('quiet')) {
+                console.log('Stop command detected');
+                window.speechSynthesis.cancel();
+                stopRecognition.stop();
+                if (onComplete) onComplete();
+            }
+        };
+        
+        stopRecognition.onerror = () => {
+            stopRecognition.stop();
+        };
+        
+        // Start listening when speech starts
+        utterance.onstart = () => {
+            try {
+                stopRecognition.start();
+            } catch (e) {
+                console.error('Stop recognition error:', e);
+            }
+        };
+        
+        // Stop listening when speech ends
+        utterance.onend = () => {
+            try {
+                stopRecognition.stop();
+            } catch (e) {}
+            if (onComplete) onComplete();
+        };
+    } else {
+        utterance.onend = () => {
+            if (onComplete) onComplete();
+        };
+    }
+    
+    window.speechSynthesis.speak(utterance);
+}
+
+function showFirebaseStatus(firebaseResult) {
+    const statusDiv = document.getElementById('sendStatus');
+    if (statusDiv) {
+        statusDiv.innerHTML = 
+            '<hr style="border: 1px solid var(--panel-border); margin: 1rem 0;">' +
+            '<p style="font-size: 1.2rem; opacity: 0.8;">📤 ' + firebaseResult.message + '</p>';
+    }
+}
+
+function speak(text) {
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 0.9;
+        window.speechSynthesis.speak(utterance);
+    }
+}
+</script>
+{% endblock %}

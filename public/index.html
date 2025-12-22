@@ -1,0 +1,180 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>Braille Sender</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      padding: 20px;
+      max-width: 480px;
+      margin: auto;
+      background-color: var(--bg);
+      color: var(--fg);
+      transition: background 0.3s, color 0.3s;
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    textarea {
+      width: 100%;
+      height: 120px;
+      font-size: 18px;
+      padding: 12px;
+      box-sizing: border-box;
+      border-radius: 12px;
+      border: 2px solid var(--fg);
+      background: transparent;
+      color: inherit;
+      resize: none;
+      outline: none;
+    }
+    button {
+      padding: 12px 18px;
+      font-size: 18px;
+      margin: 10px 5px 0 0;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      background: var(--btn-bg);
+      color: var(--btn-fg);
+      font-weight: 500;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      transition: background 0.3s;
+    }
+    button:hover {
+      background: var(--btn-bg-hover);
+    }
+    #status {
+      margin-top: 10px;
+      text-align: center;
+      font-size: 16px;
+      min-height: 20px;
+    }
+    #brailleCell {
+      display: grid;
+      grid-template-columns: repeat(2, 50px);
+      grid-template-rows: repeat(3, 50px);
+      gap: 12px;
+      margin: 20px auto 0;
+      justify-content: center;
+    }
+    .dot {
+      width: 50px; 
+      height: 50px; 
+      border-radius: 50%;
+      border: 2px solid var(--fg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      transition: background 0.2s, transform 0.2s, border-color 0.2s;
+    }
+    .raised {
+      background-color: blue;
+      border-color: blue;
+      color: white;
+      transform: scale(1.05);
+    }
+    :root {
+      --bg: #f5f5f5;
+      --fg: #222;
+      --btn-bg: #007bff;
+      --btn-fg: white;
+      --btn-bg-hover: #0056c7;
+    }
+    .dark {
+      --bg: #121212;
+      --fg: #f5f5f5;
+      --btn-bg: #2196f3;
+      --btn-fg: white;
+      --btn-bg-hover: #1976d2;
+    }
+  </style>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+</head>
+<body>
+  <h2>Braille Text Sender</h2>
+  <textarea id="txt" placeholder="Type here...">hello</textarea>
+  <div style="text-align:center;">
+    <button id="sendBtn">Send</button>
+    <button id="modeBtn">🌙 Toggle Mode</button>
+  </div>
+  <p id="status"></p>
+
+  <!-- Braille preview cell -->
+  <div id="brailleCell">
+    <div class="dot"></div>
+    <div class="dot"></div>
+    <div class="dot"></div>
+    <div class="dot"></div>
+    <div class="dot"></div>
+    <div class="dot"></div>
+  </div>
+
+  <script>
+  // Firebase config
+  var firebaseConfig = {
+    apiKey: "AIzaSyBK0naZeMOyeUQmdG9Ouj_arwttNi_z2pQ",
+    authDomain: "braille-display-b87be.firebaseapp.com",
+    databaseURL: "https://braille-display-b87be-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "braille-display-b87be",
+    storageBucket: "braille-display-b87be.firebasestorage.app",
+    messagingSenderId: "137164291901",
+    appId: "1:137164291901:web:196bee92d49c74628b0f54"
+  };
+  firebase.initializeApp(firebaseConfig);
+  var db = firebase.database();
+
+  // Braille map
+  const brailleAlphabet = {
+    a: [1,0,0,0,0,0], b: [1,1,0,0,0,0], c: [1,0,0,1,0,0], d: [1,0,0,1,1,0],
+    e: [1,0,0,0,1,0], f: [1,1,0,1,0,0], g: [1,1,0,1,1,0], h: [1,1,0,0,1,0],
+    i: [0,1,0,1,0,0], j: [0,1,0,1,1,0], k: [1,0,1,0,0,0], l: [1,1,1,0,0,0],
+    m: [1,0,1,1,0,0], n: [1,0,1,1,1,0], o: [1,0,1,0,1,0], p: [1,1,1,1,0,0],
+    q: [1,1,1,1,1,0], r: [1,1,1,0,1,0], s: [0,1,1,1,0,0], t: [0,1,1,1,1,0],
+    u: [1,0,1,0,0,1], v: [1,1,1,0,0,1], w: [0,1,0,1,1,1], x: [1,0,1,1,0,1],
+    y: [1,0,1,1,1,1], z: [1,0,1,0,1,1]
+  };
+
+  function updateBrailleCell(char) {
+    const dots = brailleAlphabet[char.toLowerCase()] || [0,0,0,0,0,0];
+    const cells = document.querySelectorAll('.dot');
+    dots.forEach((val, i) => {
+      cells[i].classList.toggle('raised', !!val);
+    });
+  }
+
+  document.getElementById('sendBtn').addEventListener('click', function() {
+    const val = document.getElementById('txt').value || '';
+    if (!val.trim()) return;
+
+    db.ref('/brailleText').set(val)
+      .then(() => {
+        document.getElementById('status').innerText = "Sent: " + val;
+
+        let idx = 0;
+        const interval = setInterval(() => {
+          if (idx < val.length) {
+            updateBrailleCell(val[idx]);
+            idx++;
+          } else {
+            clearInterval(interval);
+            // ⛔ Removed auto-clear of braille + DB reset
+          }
+        }, 500);
+      })
+      .catch(e => {
+        document.getElementById('status').innerText = "Error: " + e;
+      });
+  });
+
+  document.getElementById('modeBtn').addEventListener('click', () => {
+    document.body.classList.toggle('dark');
+  });
+</script>
+</body>
+</html>

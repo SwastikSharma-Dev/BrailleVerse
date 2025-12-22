@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}News - Braille Display{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 data-speak-on-load="{{ instruction }}">News</h1>
+    <p class="instruction" role="heading" aria-level="2">
+        {{ instruction }}
+    </p>
+</div>
+
+<div class="content-area">
+    <div class="button-grid">
+        {% for category in categories %}
+        <a 
+            href="{{ category.url }}" 
+            class="nav-button option-button"
+            role="button"
+            aria-label="{{ category.text }}"
+            tabindex="0">
+            {% if category.id == 'headlines' %}📰{% elif category.id == 'technology' %}💻{% elif category.id == 'sports' %}⚽{% else %}←{% endif %}
+            {{ category.text }}
+        </a>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Screen reader announcements -->
+<div class="sr-only" aria-live="polite" aria-atomic="true">
+    News categories: 
+    {% for category in categories %}
+        {{ forloop.counter }}. {{ category.text }}{% if not forloop.last %}, {% endif %}
+    {% endfor %}
+</div>
+{% endblock %}

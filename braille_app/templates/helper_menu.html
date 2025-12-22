@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Helper Menu{% endblock %}
+
+{% block content %}
+<div class="panel-container three-panels">
+    <!-- Custom Text Panel -->
+    <a href="{% url 'helper_custom_text' %}" class="panel" role="button" aria-label="Send Custom Text - Type or speak text to send to braille device" tabindex="0">
+        <div class="panel-icon">✏️</div>
+        <div class="panel-title">CUSTOM TEXT</div>
+        <div class="panel-description">Type or Speak Text</div>
+    </a>
+    
+    <!-- PDF to Braille Panel -->
+    <a href="{% url 'helper_pdf_to_braille' %}" class="panel" role="button" aria-label="PDF to Braille - Upload PDF file to convert" tabindex="0">
+        <div class="panel-icon">📄</div>
+        <div class="panel-title">PDF TO BRAILLE</div>
+        <div class="panel-description">Upload PDF File</div>
+    </a>
+    
+    <!-- Image Transcription Panel -->
+    <a href="{% url 'helper_image_transcription' %}" class="panel" role="button" aria-label="Image Transcription - Get AI description of images" tabindex="0">
+        <div class="panel-icon">🖼️</div>
+        <div class="panel-title">IMAGE TRANSCRIPTION</div>
+        <div class="panel-description">AI Image Description</div>
+    </a>
+</div>
+
+<!-- Back Button -->
+<a href="{% url 'landing' %}" class="back-button" role="button" aria-label="Go back to home">← BACK</a>
+
+<div class="sr-only" role="status" aria-live="polite">
+    {{ instruction }}
+</div>
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends "base_new.html" %}
+{% load static %}
+
+{% block title %}Welcome - Braille Display{% endblock %}
+
+{% block content %}
+<div class="panel-container two-panels">
+    <!-- Helper Panel -->
+    <a href="{% url 'helper_menu' %}" class="panel" role="button" aria-label="Helper - Send custom text, PDF, or image transcription" tabindex="0">
+        <div class="panel-icon">🤝</div>
+        <div class="panel-title">HELPER</div>
+        <div class="panel-description">Send Custom Text · PDF to Braille · Image Transcription</div>
+    </a>
+    
+    <!-- Visually Impaired Panel -->
+    <a href="{% url 'visually_impaired_menu' %}" class="panel" role="button" aria-label="Visually Impaired - Books, News, AI Helper" tabindex="0">
+        <div class="panel-icon">👁️</div>
+        <div class="panel-title">VISUALLY IMPAIRED</div>
+        <div class="panel-description">Books · News · AI Helper</div>
+    </a>
+</div>
+
+<!-- Screen Reader Announcement -->
+<div class="sr-only" role="status" aria-live="polite">
+    {{ instruction }}
+</div>
+{% endblock %}

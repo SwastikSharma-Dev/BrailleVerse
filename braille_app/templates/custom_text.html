@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}Send Custom Text - Braille Display{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 data-speak-on-load="{{ instruction }}">Send Custom Text</h1>
+    <p class="instruction" role="heading" aria-level="2">
+        {{ instruction }}
+    </p>
+</div>
+
+<div class="content-area">
+    <form method="post" action="{% url 'custom_text' %}" id="custom-text-form">
+        {% csrf_token %}
+        
+        <div class="form-group">
+            <label for="text-input">
+                Your Text
+                <span class="sr-only">(Required field. You can type or use voice input)</span>
+            </label>
+            <textarea 
+                id="text-input" 
+                name="text" 
+                required
+                aria-required="true"
+                aria-describedby="text-help"
+                placeholder="Type your message here or click the voice button..."></textarea>
+            <p id="text-help" style="font-size: 1.125rem; margin-top: 1rem; opacity: 0.9;">
+                This text will be sent to your braille device in chunks.
+            </p>
+        </div>
+        
+        <div class="button-list">
+            <button 
+                type="button" 
+                id="voice-text-button"
+                class="button"
+                aria-label="Use voice to enter text">
+                🎤 Use Voice Input
+            </button>
+            
+            <span id="voice-text-indicator" role="status" aria-live="polite" style="font-size: 1.25rem; color: var(--accent-color);"></span>
+            
+            <button 
+                type="submit" 
+                class="button"
+                aria-label="Send text to braille device">
+                📤 Send to Braille Device
+            </button>
+            
+            <a 
+                href="{% url 'main_menu' %}" 
+                class="button"
+                role="button"
+                aria-label="Go back to main menu">
+                ← Back to Main Menu
+            </a>
+        </div>
+    </form>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Form submission handler
+    document.getElementById('custom-text-form').addEventListener('submit', function(e) {
+        const textInput = document.getElementById('text-input');
+        if (!textInput.value.trim()) {
+            e.preventDefault();
+            if (window.voiceNavigator) {
+                window.voiceNavigator.speak('Please enter some text before submitting.');
+            }
+            alert('Please enter some text before submitting.');
+        }
+    });
+</script>
+{% endblock %}

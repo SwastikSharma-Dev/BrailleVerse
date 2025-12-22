@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Voice Assistant Answer - Braille Display{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 data-speak-on-load="{{ answer }}">Voice Assistant Response</h1>
+</div>
+
+<div class="content-area">
+    <div style="padding: 2rem; background-color: var(--secondary-bg); border: 3px solid var(--accent-color); border-radius: 8px; margin-bottom: 2rem;">
+        <h2 style="font-size: 1.5rem; color: var(--accent-color); margin-bottom: 1rem;">Your Question:</h2>
+        <p style="font-size: 1.25rem; line-height: 1.8;">{{ question }}</p>
+    </div>
+    
+    <div style="padding: 2rem; background-color: var(--button-bg); border: 3px solid var(--success-color); border-radius: 8px; margin-bottom: 2rem;">
+        <h2 style="font-size: 1.5rem; color: var(--success-color); margin-bottom: 1rem;">Answer:</h2>
+        <p style="font-size: 1.25rem; line-height: 1.8;">{{ answer }}</p>
+    </div>
+    
+    {% if success %}
+    <div class="message message-success" role="status">
+        <p style="text-align: center;">✅ Answer sent to your braille device</p>
+    </div>
+    {% endif %}
+    
+    <div class="button-list" style="margin-top: 3rem;">
+        <a 
+            href="{% url 'voice_assistant' %}" 
+            class="button"
+            role="button"
+            aria-label="Ask another question">
+            💬 Ask Another Question
+        </a>
+        
+        <a 
+            href="{% url 'main_menu' %}" 
+            class="button"
+            role="button"
+            aria-label="Return to main menu">
+            🏠 Back to Main Menu
+        </a>
+    </div>
+</div>
+{% endblock %}

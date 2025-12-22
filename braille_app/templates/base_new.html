@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Braille Display{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    {% load static %}
+    
+    <!-- Voice Indicator -->
+    <div class="voice-indicator" id="voiceIndicator" role="status" aria-live="polite" aria-label="Voice recognition status"></div>
+    
+    <!-- Main Content -->
+    {% block content %}{% endblock %}
+    
+    <!-- Voice Navigation -->
+    <script src="{% static 'js/voice.js' %}"></script>
+    
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Send Custom Text{% endblock %}
+
+{% block content %}
+<div class="form-panel">
+    <h1 class="form-title">✏️ SEND CUSTOM TEXT</h1>
+    
+    <div class="form-group">
+        <textarea 
+            id="customText" 
+            class="form-textarea" 
+            placeholder="Type or speak your text here..."
+            aria-label="Enter text to send to braille device"
+        ></textarea>
+    </div>
+    
+    <div>
+        <button class="form-button" onclick="sendText()">SEND TO DEVICE</button>
+    </div>
+    
+    <div id="result" style="margin-top: 3rem; font-size: 2rem;"></div>
+</div>
+
+<!-- Back Button -->
+<a href="{% url 'helper_menu' %}" class="back-button" role="button" aria-label="Go back">← BACK</a>
+
+<div class="sr-only" role="status" aria-live="polite">
+    {{ instruction }}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function sendText() {
+    const text = document.getElementById('customText').value.trim();
+    
+    if (!text) {
+        speak('Please enter some text');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('text', text);
+    
+    document.getElementById('result').innerHTML = '<div class="loading-spinner"></div>';
+    speak('Sending text to device');
+    
+    fetch('{% url "helper_custom_text" %}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            document.getElementById('result').innerHTML = '✅ ' + data.message;
+            speak('Text sent successfully');
+            setTimeout(() => {
+                document.getElementById('customText').value = '';
+                document.getElementById('result').innerHTML = '';
+            }, 3000);
+        } else {
+            document.getElementById('result').innerHTML = '❌ ' + data.message;
+            speak('Error sending text');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        document.getElementById('result').innerHTML = '❌ Connection error';
+        speak('Connection error');
+    });
+}
+
+function speak(text) {
+    if ('speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance(text);
+        window.speechSynthesis.speak(utterance);
+    }
+}
+</script>
+{% endblock %}

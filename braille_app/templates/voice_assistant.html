@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}Voice Assistant - Braille Display{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 data-speak-on-load="{{ instruction }}">Voice Assistant</h1>
+    <p class="instruction" role="heading" aria-level="2">
+        {{ instruction }}
+    </p>
+</div>
+
+<div class="content-area">
+    <form method="post" action="{% url 'voice_assistant' %}" id="assistant-form">
+        {% csrf_token %}
+        
+        <div class="form-group">
+            <label for="question-input">
+                Your Question
+                <span class="sr-only">(Required field. Ask me anything)</span>
+            </label>
+            <textarea 
+                id="question-input" 
+                name="question" 
+                required
+                aria-required="true"
+                aria-describedby="question-help"
+                placeholder="Ask me anything..."></textarea>
+            <p id="question-help" style="font-size: 1.125rem; margin-top: 1rem; opacity: 0.9;">
+                The answer will be spoken and sent to your braille device.
+            </p>
+        </div>
+        
+        <div class="button-list">
+            <button 
+                type="button" 
+                id="voice-text-button"
+                class="button"
+                aria-label="Use voice to ask question">
+                🎤 Ask Using Voice
+            </button>
+            
+            <span id="voice-text-indicator" role="status" aria-live="polite" style="font-size: 1.25rem; color: var(--accent-color);"></span>
+            
+            <button 
+                type="submit" 
+                class="button"
+                aria-label="Submit question">
+                💬 Get Answer
+            </button>
+            
+            <a 
+                href="{% url 'main_menu' %}" 
+                class="button"
+                role="button"
+                aria-label="Go back to main menu">
+                ← Back to Main Menu
+            </a>
+        </div>
+    </form>
+</div>
+
+<div style="margin-top: 3rem; padding: 2rem; background-color: var(--secondary-bg); border: 2px solid var(--border-color); border-radius: 8px;">
+    <h2 style="font-size: 1.5rem; margin-bottom: 1rem;">Example Questions:</h2>
+    <ul style="font-size: 1.25rem; line-height: 2; list-style-position: inside;">
+        <li>What is artificial intelligence?</li>
+        <li>Tell me about braille</li>
+        <li>What can you help me with?</li>
+    </ul>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    document.getElementById('assistant-form').addEventListener('submit', function(e) {
+        const questionInput = document.getElementById('question-input');
+        if (!questionInput.value.trim()) {
+            e.preventDefault();
+            if (window.voiceNavigator) {
+                window.voiceNavigator.speak('Please ask a question first.');
+            }
+            alert('Please ask a question first.');
+        }
+    });
+</script>
+{% endblock %}

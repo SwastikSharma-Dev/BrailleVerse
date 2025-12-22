@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Text Sent - Braille Display{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 {% if success %}data-speak-on-load="{{ feedback }}"{% endif %}>
+        {% if success %}✅ Success{% else %}❌ Error{% endif %}
+    </h1>
+</div>
+
+<div class="content-area">
+    {% if success %}
+    <div class="message message-success" role="alert">
+        <p style="font-size: 1.5rem; text-align: center;">{{ feedback }}</p>
+        <p style="font-size: 1.25rem; text-align: center; margin-top: 1rem;">{{ message }}</p>
+    </div>
+    {% else %}
+    <div class="message message-error" role="alert">
+        <p style="font-size: 1.5rem; text-align: center;">{{ feedback }}</p>
+        <p style="font-size: 1.25rem; text-align: center; margin-top: 1rem;">{{ message }}</p>
+    </div>
+    {% endif %}
+    
+    <div class="button-list" style="margin-top: 3rem;">
+        <a 
+            href="{% url 'custom_text' %}" 
+            class="button"
+            role="button"
+            aria-label="Send another message">
+            📝 Send Another Message
+        </a>
+        
+        <a 
+            href="{% url 'main_menu' %}" 
+            class="button"
+            role="button"
+            aria-label="Return to main menu">
+            🏠 Back to Main Menu
+        </a>
+    </div>
+</div>
+{% endblock %}

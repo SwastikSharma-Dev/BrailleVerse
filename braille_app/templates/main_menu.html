@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}Main Menu - Braille Display{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 data-speak-on-load="{{ greeting }}">Main Menu</h1>
+    <p class="instruction" role="heading" aria-level="2">
+        {{ greeting }}
+    </p>
+</div>
+
+<div class="content-area">
+    <div class="button-grid">
+        {% for option in options %}
+        <a 
+            href="{{ option.url }}" 
+            class="nav-button option-button"
+            role="button"
+            aria-label="{{ option.text }}"
+            tabindex="0">
+            {{ option.text }}
+        </a>
+        {% endfor %}
+    </div>
+    
+    <div style="text-align: center; margin-top: 3rem;">
+        <p style="font-size: 1.25rem; opacity: 0.8;">
+            Say the name of any option or say its number (1-{{ options|length }})
+        </p>
+    </div>
+</div>
+
+<!-- Screen reader announcements -->
+<div class="sr-only" aria-live="polite" aria-atomic="true">
+    Main menu options: 
+    {% for option in options %}
+        {{ forloop.counter }}. {{ option.text }}{% if not forloop.last %}, {% endif %}
+    {% endfor %}
+</div>
+{% endblock %}

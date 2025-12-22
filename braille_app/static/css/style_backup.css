@@ -1,0 +1,576 @@
+/**
+ * Accessibility-First Stylesheet for Braille Display Website
+ * 
+ * Design Principles:
+ * - High contrast colors (WCAG AAA compliant)
+ * - Large, readable fonts
+ * - Minimal visual clutter
+ * - Clear focus indicators
+ * - Touch-friendly button sizes
+ * - Screen reader optimized
+ */
+
+/* ============================================
+   ROOT VARIABLES
+   ============================================ */
+
+:root {
+    /* High Contrast Color Scheme */
+    --primary-bg: #000000;
+    --primary-text: #FFFFFF;
+    --secondary-bg: #1a1a1a;
+    --accent-color: #FFD700;
+    --accent-hover: #FFA500;
+    --button-bg: #2a2a2a;
+    --button-hover: #3a3a3a;
+    --border-color: #FFD700;
+    --focus-color: #00FF00;
+    --error-color: #FF4444;
+    --success-color: #44FF44;
+    
+    /* Spacing */
+    --spacing-xs: 0.5rem;
+    --spacing-sm: 1rem;
+    --spacing-md: 1.5rem;
+    --spacing-lg: 2rem;
+    --spacing-xl: 3rem;
+    
+    /* Font Sizes */
+    --font-size-xl: 2.5rem;
+    --font-size-lg: 2rem;
+    --font-size-md: 1.5rem;
+    --font-size-base: 1.25rem;
+    --font-size-sm: 1rem;
+    
+    /* Button Sizes */
+    --button-min-height: 80px;
+    --button-min-width: 200px;
+}
+
+/* ============================================
+   GLOBAL STYLES
+   ============================================ */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    font-size: 16px;
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: 'Arial', 'Helvetica', sans-serif;
+    font-size: var(--font-size-base);
+    line-height: 1.6;
+    color: var(--primary-text);
+    background-color: var(--primary-bg);
+    min-height: 100vh;
+    padding: var(--spacing-md);
+}
+
+/* ============================================
+   TYPOGRAPHY
+   ============================================ */
+
+h1 {
+    font-size: var(--font-size-xl);
+    font-weight: bold;
+    margin-bottom: var(--spacing-lg);
+    color: var(--accent-color);
+    text-align: center;
+}
+
+h2 {
+    font-size: var(--font-size-lg);
+    font-weight: bold;
+    margin-bottom: var(--spacing-md);
+    color: var(--accent-color);
+}
+
+h3 {
+    font-size: var(--font-size-md);
+    font-weight: bold;
+    margin-bottom: var(--spacing-sm);
+}
+
+p {
+    margin-bottom: var(--spacing-md);
+    font-size: var(--font-size-base);
+}
+
+.instruction {
+    font-size: var(--font-size-md);
+    text-align: center;
+    margin-bottom: var(--spacing-xl);
+    padding: var(--spacing-md);
+    background-color: var(--secondary-bg);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+}
+
+/* ============================================
+   LAYOUT
+   ============================================ */
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: var(--spacing-lg);
+}
+
+.page-header {
+    text-align: center;
+    margin-bottom: var(--spacing-xl);
+}
+
+.content-area {
+    background-color: var(--secondary-bg);
+    padding: var(--spacing-xl);
+    border-radius: 12px;
+    border: 3px solid var(--border-color);
+    margin-bottom: var(--spacing-lg);
+}
+
+/* ============================================
+   BUTTONS
+   ============================================ */
+
+.button,
+.nav-button,
+.option-button,
+button,
+input[type="submit"] {
+    display: inline-block;
+    min-height: var(--button-min-height);
+    min-width: var(--button-min-width);
+    padding: var(--spacing-md) var(--spacing-lg);
+    font-size: var(--font-size-md);
+    font-weight: bold;
+    color: var(--primary-text);
+    background-color: var(--button-bg);
+    border: 3px solid var(--border-color);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+    text-decoration: none;
+    margin: var(--spacing-sm);
+}
+
+.button:hover,
+.nav-button:hover,
+.option-button:hover,
+button:hover,
+input[type="submit"]:hover {
+    background-color: var(--accent-color);
+    color: var(--primary-bg);
+    border-color: var(--accent-color);
+    transform: scale(1.05);
+}
+
+.button:focus,
+.nav-button:focus,
+.option-button:focus,
+button:focus,
+input[type="submit"]:focus {
+    outline: 4px solid var(--focus-color);
+    outline-offset: 4px;
+}
+
+.button:active,
+.nav-button:active,
+.option-button:active,
+button:active,
+input[type="submit"]:active {
+    transform: scale(0.98);
+}
+
+/* Button Grid Layout */
+.button-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--spacing-lg);
+    margin-top: var(--spacing-xl);
+    padding: var(--spacing-md);
+}
+
+.button-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+    align-items: center;
+    margin-top: var(--spacing-lg);
+}
+
+/* ============================================
+   FORMS
+   ============================================ */
+
+.form-group {
+    margin-bottom: var(--spacing-lg);
+}
+
+label {
+    display: block;
+    font-size: var(--font-size-md);
+    font-weight: bold;
+    margin-bottom: var(--spacing-sm);
+    color: var(--accent-color);
+}
+
+input[type="text"],
+textarea {
+    width: 100%;
+    min-height: 60px;
+    padding: var(--spacing-md);
+    font-size: var(--font-size-base);
+    color: var(--primary-text);
+    background-color: var(--secondary-bg);
+    border: 3px solid var(--border-color);
+    border-radius: 8px;
+    font-family: inherit;
+}
+
+textarea {
+    min-height: 200px;
+    resize: vertical;
+}
+
+input[type="text"]:focus,
+textarea:focus {
+    outline: 4px solid var(--focus-color);
+    outline-offset: 2px;
+    border-color: var(--accent-color);
+}
+
+/* ============================================
+   VOICE CONTROLS
+   ============================================ */
+
+.voice-controls {
+    position: fixed;
+    bottom: var(--spacing-lg);
+    right: var(--spacing-lg);
+    z-index: 1000;
+}
+
+#voice-button {
+    min-width: 80px;
+    min-height: 80px;
+    border-radius: 50%;
+    font-size: var(--font-size-lg);
+    background-color: var(--accent-color);
+    color: var(--primary-bg);
+    border: 4px solid var(--primary-bg);
+    box-shadow: 0 4px 12px rgba(255, 215, 0, 0.5);
+}
+
+#voice-button.listening {
+    background-color: var(--error-color);
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+#listening-indicator {
+    position: fixed;
+    top: var(--spacing-lg);
+    left: 50%;
+    transform: translateX(-50%);
+    padding: var(--spacing-md) var(--spacing-lg);
+    background-color: var(--secondary-bg);
+    border: 3px solid var(--border-color);
+    border-radius: 8px;
+    font-size: var(--font-size-md);
+    font-weight: bold;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 1000;
+}
+
+#listening-indicator.active {
+    opacity: 1;
+}
+
+#voice-feedback {
+    position: fixed;
+    bottom: calc(var(--spacing-lg) + 100px);
+    right: var(--spacing-lg);
+    max-width: 400px;
+    padding: var(--spacing-md);
+    background-color: var(--secondary-bg);
+    border: 3px solid var(--accent-color);
+    border-radius: 8px;
+    font-size: var(--font-size-base);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 1000;
+}
+
+#voice-feedback.active {
+    opacity: 1;
+}
+
+/* ============================================
+   ACCESSIBILITY HELPERS
+   ============================================ */
+
+/* Screen reader only content */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+/* Skip to main content link */
+.skip-to-main {
+    position: absolute;
+    top: -100px;
+    left: 0;
+    background-color: var(--accent-color);
+    color: var(--primary-bg);
+    padding: var(--spacing-md);
+    font-size: var(--font-size-md);
+    font-weight: bold;
+    text-decoration: none;
+    z-index: 10000;
+}
+
+.skip-to-main:focus {
+    top: 0;
+}
+
+/* Focus visible for keyboard navigation */
+:focus-visible {
+    outline: 4px solid var(--focus-color);
+    outline-offset: 4px;
+}
+
+/* ============================================
+   MESSAGES AND ALERTS
+   ============================================ */
+
+.message {
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+    border-radius: 8px;
+    border: 3px solid;
+    font-size: var(--font-size-md);
+    font-weight: bold;
+}
+
+.message-success {
+    background-color: rgba(68, 255, 68, 0.1);
+    border-color: var(--success-color);
+    color: var(--success-color);
+}
+
+.message-error {
+    background-color: rgba(255, 68, 68, 0.1);
+    border-color: var(--error-color);
+    color: var(--error-color);
+}
+
+.message-info {
+    background-color: rgba(255, 215, 0, 0.1);
+    border-color: var(--accent-color);
+    color: var(--accent-color);
+}
+
+/* ============================================
+   ARTICLES AND CONTENT
+   ============================================ */
+
+.article-list {
+    list-style: none;
+    padding: 0;
+}
+
+.article-item {
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-md);
+    background-color: var(--button-bg);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.article-item:hover {
+    background-color: var(--button-hover);
+    border-color: var(--accent-color);
+}
+
+.article-title {
+    font-size: var(--font-size-md);
+    font-weight: bold;
+    color: var(--accent-color);
+    margin-bottom: var(--spacing-sm);
+}
+
+.article-content {
+    font-size: var(--font-size-base);
+    line-height: 1.8;
+}
+
+/* ============================================
+   BOOKS AND READING
+   ============================================ */
+
+.book-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--spacing-lg);
+    margin-top: var(--spacing-lg);
+}
+
+.book-item {
+    padding: var(--spacing-lg);
+    background-color: var(--button-bg);
+    border: 3px solid var(--border-color);
+    border-radius: 8px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.book-item:hover {
+    background-color: var(--accent-color);
+    color: var(--primary-bg);
+    transform: scale(1.05);
+}
+
+.book-title {
+    font-size: var(--font-size-md);
+    font-weight: bold;
+    margin-bottom: var(--spacing-sm);
+}
+
+.book-author {
+    font-size: var(--font-size-base);
+    opacity: 0.8;
+}
+
+.chapter-content {
+    font-size: var(--font-size-base);
+    line-height: 2;
+    text-align: left;
+    padding: var(--spacing-lg);
+    background-color: var(--secondary-bg);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    margin-bottom: var(--spacing-lg);
+}
+
+.chapter-navigation {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-lg);
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+@media (max-width: 768px) {
+    :root {
+        --font-size-xl: 2rem;
+        --font-size-lg: 1.75rem;
+        --font-size-md: 1.25rem;
+        --font-size-base: 1.125rem;
+    }
+    
+    .button-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .container {
+        padding: var(--spacing-sm);
+    }
+    
+    .content-area {
+        padding: var(--spacing-md);
+    }
+    
+    .voice-controls {
+        bottom: var(--spacing-sm);
+        right: var(--spacing-sm);
+    }
+}
+
+@media (max-width: 480px) {
+    body {
+        padding: var(--spacing-sm);
+    }
+    
+    .button,
+    .nav-button,
+    .option-button,
+    button {
+        min-width: 100%;
+        width: 100%;
+    }
+}
+
+/* ============================================
+   PRINT STYLES
+   ============================================ */
+
+@media print {
+    .voice-controls,
+    #voice-button,
+    #listening-indicator,
+    #voice-feedback {
+        display: none;
+    }
+    
+    body {
+        color: #000;
+        background-color: #fff;
+    }
+}
+
+/* ============================================
+   HIGH CONTRAST MODE
+   ============================================ */
+
+@media (prefers-contrast: high) {
+    :root {
+        --border-color: #FFFFFF;
+        --focus-color: #FFFFFF;
+    }
+    
+    button,
+    .button {
+        border-width: 4px;
+    }
+}
+
+/* ============================================
+   REDUCED MOTION
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation: none !important;
+        transition: none !important;
+    }
+    
+    html {
+        scroll-behavior: auto;
+    }
+}

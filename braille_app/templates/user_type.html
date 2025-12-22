@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}User Type - Braille Display{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 data-speak-on-load="{{ question }}">User Type Selection</h1>
+    <p class="instruction" role="heading" aria-level="2">
+        {{ question }}
+    </p>
+</div>
+
+<div class="content-area">
+    <div class="button-list">
+        {% for option in options %}
+        <a 
+            href="{{ option.url }}" 
+            class="nav-button option-button"
+            role="button"
+            aria-label="{{ option.text }}"
+            tabindex="0">
+            {{ option.text }}
+        </a>
+        {% endfor %}
+    </div>
+    
+    <div style="text-align: center; margin-top: 3rem;">
+        <p style="font-size: 1.25rem; opacity: 0.8;">
+            Say "Fully" or "Partially" or use the buttons
+        </p>
+    </div>
+</div>
+
+<!-- Screen reader announcements -->
+<div class="sr-only" aria-live="polite" aria-atomic="true">
+    Available options: 1. {{ options.0.text }}, 2. {{ options.1.text }}
+</div>
+{% endblock %}

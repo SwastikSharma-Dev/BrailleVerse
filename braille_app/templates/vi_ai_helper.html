@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}AI Helper{% endblock %}
+
+{% block content %}
+<div class="form-panel">
+    <h1 class="form-title">🤖 AI HELPER</h1>
+    
+    <div class="form-group">
+        <label class="form-label">Ask AI Assistant:</label>
+        <textarea 
+            id="userMessage" 
+            class="form-textarea" 
+            placeholder="Type your question or just speak (voice navigation is active)..."
+            aria-label="Ask AI assistant a question"
+        ></textarea>
+    </div>
+    
+    <div>
+        <button class="form-button" onclick="sendMessage()">SEND MESSAGE</button>
+    </div>
+    
+    <div id="response" class="result-display"></div>
+</div>
+
+<!-- Back Button -->
+<a href="{% url 'visually_impaired_menu' %}" class="back-button" role="button" aria-label="Go back">← BACK</a>
+
+<div class="sr-only" role="status" aria-live="polite" data-speak-on-load="AI Helper page. Just speak your question naturally, then say send to submit. Voice navigation is always listening.">
+    AI Helper - Ask me anything using voice or keyboard
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function sendMessage() {
+    const message = document.getElementById('userMessage').value.trim();
+    
+    if (!message) {
+        speak('Please enter a message');
+        alert('Please type or speak your question first');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('message', message);
+    
+    document.getElementById('response').innerHTML = '<div class="loading-spinner"></div><p style="font-size: 1.3rem; margin-top: 1rem;">AI is thinking...</p>';
+    speak('Processing your question');
+    
+    fetch('{% url "vi_ai_helper" %}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            document.getElementById('response').innerHTML = 
+                '<div style=\"text-align: left; padding: 2rem; border: 2px solid var(--panel-border); border-radius: 8px;\">' +
+                '<h3 style=\"font-size: 1.5rem; margin-bottom: 1rem; color: #44ff44;\">You asked:</h3>' +
+                '<p style=\"font-size: 1.2rem; margin-bottom: 1.5rem; opacity: 0.9;\">' + data.user_message + '</p>' +
+                '<h3 style=\"font-size: 1.5rem; margin-bottom: 1rem; color: #4af;\">AI Response:</h3>' +
+                '<p style=\"font-size: 1.2rem; line-height: 1.8;\">' + data.ai_response + '</p>' +
+                '</div>';
+            speak('AI says: ' + data.ai_response);
+            
+            // Clear the input after successful send
+            document.getElementById('userMessage').value = '';
+        } else {
+            document.getElementById('response').innerHTML = 
+                '<div style=\"padding: 2rem; border: 2px solid #ff4444; border-radius: 8px;\">' +
+                '<p style=\"font-size: 1.3rem; color: #ff4444;\">❌ Error: ' + data.message + '</p>' +
+                '</div>';
+            speak('Error getting response');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        document.getElementById('response').innerHTML = 
+            '<div style=\"padding: 2rem; border: 2px solid #ff4444; border-radius: 8px;\">' +
+            '<p style=\"font-size: 1.3rem; color: #ff4444;\">❌ Connection error</p>' +
+            '</div>';
+        speak('Connection error');
+    });
+}
+
+function speak(text) {
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 0.95;
+        utterance.pitch = 1.0;
+        window.speechSynthesis.speak(utterance);
+    }
+}
+
+// Allow Enter key to send
+document.addEventListener('DOMContentLoaded', () => {
+    const textarea = document.getElementById('userMessage');
+    if (textarea) {
+        textarea.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

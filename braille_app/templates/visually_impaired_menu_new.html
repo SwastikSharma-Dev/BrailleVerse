@@ -1,0 +1,36 @@
+{% extends "base_new.html" %}
+{% load static %}
+
+{% block title %}Visually Impaired Menu{% endblock %}
+
+{% block content %}
+<div class="panel-container three-panels">
+    <!-- Books Panel -->
+    <a href="{% url 'vi_books' %}" class="panel" role="button" aria-label="Books - Read popular books" tabindex="0">
+        <div class="panel-icon">📚</div>
+        <div class="panel-title">BOOKS</div>
+        <div class="panel-description">Read Popular Books</div>
+    </a>
+    
+    <!-- News Panel -->
+    <a href="{% url 'vi_news' %}" class="panel" role="button" aria-label="News - Get real-time news" tabindex="0">
+        <div class="panel-icon">📰</div>
+        <div class="panel-title">NEWS</div>
+        <div class="panel-description">Real-time News Updates</div>
+    </a>
+    
+    <!-- AI Helper Panel -->
+    <a href="{% url 'vi_ai_helper' %}" class="panel" role="button" aria-label="AI Helper - Chat with AI assistant" tabindex="0">
+        <div class="panel-icon">🤖</div>
+        <div class="panel-title">AI HELPER</div>
+        <div class="panel-description">Chat with AI Assistant</div>
+    </a>
+</div>
+
+<!-- Back Button -->
+<a href="{% url 'landing' %}" class="back-button" role="button" aria-label="Go back to home">← BACK</a>
+
+<div class="sr-only" role="status" aria-live="polite">
+    {{ instruction }}
+</div>
+{% endblock %}

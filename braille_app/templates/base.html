@@ -1,0 +1,187 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Braille Display{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    
+    <!-- Theme Toggle Button -->
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark/light theme"></button>
+    
+    <!-- Voice Indicator -->
+    <div class="voice-indicator" id="voiceIndicator" role="status" aria-live="polite" aria-label="Voice recognition status"></div>
+    
+    <!-- Main Content -->
+    {% block content %}{% endblock %}
+    
+    <!-- Theme Toggle Script -->
+    <script>
+        // Theme toggle functionality with localStorage persistence
+        const themeToggle = document.getElementById('themeToggle');
+        const htmlElement = document.documentElement;
+        
+        // Load saved theme or default to dark
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        htmlElement.setAttribute('data-theme', savedTheme);
+        
+        // Toggle theme on button click
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = htmlElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            htmlElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            
+            // Announce theme change for screen readers
+            const announcement = `Switched to ${newTheme} theme`;
+            if (window.voiceNav) {
+                window.voiceNav.speak(announcement);
+            }
+        });
+    </script>
+    
+    <!-- Voice Navigation -->
+    <script src="{% static 'js/voice.js' %}"></script>
+    
+    <!-- Hover-to-Speak Accessibility Feature -->
+    <script>
+        // Speak element label when focused or hovered (once per element)
+        let lastSpokenElement = null;
+        let hoverSpeakTimeout = null;
+        
+        function speakElementLabel(element) {
+            if (!element || element === lastSpokenElement) return;
+            
+            // Don't speak if voice navigation is speaking or listening
+            if (window.speechSynthesis && window.speechSynthesis.speaking) {
+                return;
+            }
+            
+            // Don't interfere with voice navigation's recognition
+            if (window.voiceNav && window.voiceNav.isListening) {
+                return;
+            }
+            
+            let textToSpeak = '';
+            
+            // Get text from various sources
+            if (element.hasAttribute('aria-label')) {
+                textToSpeak = element.getAttribute('aria-label');
+            } else if (element.hasAttribute('title')) {
+                textToSpeak = element.getAttribute('title');
+            } else if (element.hasAttribute('placeholder')) {
+                textToSpeak = element.getAttribute('placeholder');
+            } else if (element.tagName === 'BUTTON' || element.tagName === 'A') {
+                textToSpeak = element.textContent.trim();
+            } else if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
+                const label = document.querySelector(`label[for="${element.id}"]`);
+                if (label) {
+                    textToSpeak = label.textContent.trim();
+                } else {
+                    textToSpeak = element.getAttribute('placeholder') || 'Input field';
+                }
+            } else if (element.classList.contains('panel')) {
+                const title = element.querySelector('.panel-title');
+                if (title) {
+                    textToSpeak = title.textContent.trim();
+                }
+            }
+            
+            if (textToSpeak) {
+                lastSpokenElement = element;
+                
+                // Clear any pending hover speak
+                if (hoverSpeakTimeout) {
+                    clearTimeout(hoverSpeakTimeout);
+                }
+                
+                if (window.speechSynthesis) {
+                    // Cancel any ongoing speech from hover
+                    window.speechSynthesis.cancel();
+                    
+                    const utterance = new SpeechSynthesisUtterance(textToSpeak);
+                    utterance.rate = 1.0;
+                    utterance.pitch = 1.0;
+                    utterance.volume = 0.6; // Lower volume to distinguish from voice nav
+                    
+                    // Mark this as hover speech (not voice nav)
+                    utterance.onstart = () => {
+                        // Temporarily pause voice recognition during hover speech
+                        if (window.voiceNav && window.voiceNav.recognition && window.voiceNav.isListening) {
+                            try {
+                                window.voiceNav.recognition.abort();
+                                // Restart after speech ends
+                                utterance.onend = () => {
+                                    hoverSpeakTimeout = setTimeout(() => {
+                                        if (window.voiceNav && !window.voiceNav.isListening) {
+                                            window.voiceNav.startListening();
+                                        }
+                                    }, 300);
+                                };
+                            } catch (e) {
+                                // Ignore errors
+                            }
+                        }
+                    };
+                    
+                    window.speechSynthesis.speak(utterance);
+                }
+                
+                // Reset after 3 seconds to allow re-speaking if user returns
+                setTimeout(() => {
+                    if (lastSpokenElement === element) {
+                        lastSpokenElement = null;
+                    }
+                }, 3000);
+            }
+        }
+        
+        // Set up hover and focus listeners after page load
+        document.addEventListener('DOMContentLoaded', () => {
+            // Add listeners to interactive elements
+            const interactiveSelectors = 'button, a, input, textarea, select, .panel, [role="button"]';
+            
+            document.querySelectorAll(interactiveSelectors).forEach(element => {
+                // Focus event (keyboard navigation)
+                element.addEventListener('focus', () => {
+                    speakElementLabel(element);
+                });
+                
+                // Mouse enter event (hover) - with delay to avoid accidental hovers
+                element.addEventListener('mouseenter', () => {
+                    // Clear any previous timeout
+                    if (hoverSpeakTimeout) {
+                        clearTimeout(hoverSpeakTimeout);
+                    }
+                    
+                    // Wait 200ms before speaking to avoid accidental hovers
+                    hoverSpeakTimeout = setTimeout(() => {
+                        speakElementLabel(element);
+                    }, 200);
+                });
+                
+                // Cancel speak on mouse leave
+                element.addEventListener('mouseleave', () => {
+                    if (hoverSpeakTimeout) {
+                        clearTimeout(hoverSpeakTimeout);
+                        hoverSpeakTimeout = null;
+                    }
+                });
+            });
+        });
+        
+        // Reset last spoken element when clicking anywhere
+        document.addEventListener('click', () => {
+            setTimeout(() => {
+                lastSpokenElement = null;
+            }, 100);
+        });
+    </script>
+    
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

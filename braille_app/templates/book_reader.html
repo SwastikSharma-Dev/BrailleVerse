@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block title %}{{ book_title }} - Braille Display{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 data-speak-on-load="Chapter {{ chapter.number }}: {{ chapter.title }}">{{ book_title }}</h1>
+    <h2 style="text-align: center; font-size: 1.75rem; margin-top: 1rem;">
+        Chapter {{ chapter.number }}: {{ chapter.title }}
+    </h2>
+    <p style="text-align: center; font-size: 1.25rem; margin-top: 0.5rem; opacity: 0.8;">
+        Chapter {{ chapter.number }} of {{ total_chapters }}
+    </p>
+</div>
+
+<div class="content-area">
+    <div class="chapter-content" role="article">
+        {{ chapter.content }}
+    </div>
+    
+    <form method="post" id="send-chapter-form" style="text-align: center; margin-bottom: 2rem;">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="send_to_braille">
+        <button 
+            type="submit" 
+            class="button"
+            aria-label="Send this chapter to braille device">
+            📤 Send Chapter to Braille Device
+        </button>
+    </form>
+    
+    <div class="chapter-navigation">
+        {% if has_previous %}
+        <form method="post" style="flex: 1;">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="previous">
+            <button 
+                type="submit" 
+                class="button"
+                style="width: 100%;"
+                aria-label="Go to previous chapter">
+                ← Previous Chapter
+            </button>
+        </form>
+        {% else %}
+        <div style="flex: 1;"></div>
+        {% endif %}
+        
+        <a 
+            href="{% url 'books' %}" 
+            class="button"
+            role="button"
+            style="flex: 1;"
+            aria-label="Back to book library">
+            📚 Book Library
+        </a>
+        
+        {% if has_next %}
+        <form method="post" style="flex: 1;">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="next">
+            <button 
+                type="submit" 
+                class="button"
+                style="width: 100%;"
+                aria-label="Go to next chapter">
+                Next Chapter →
+            </button>
+        </form>
+        {% else %}
+        <div style="flex: 1;"></div>
+        {% endif %}
+    </div>
+    
+    <div style="text-align: center; margin-top: 2rem; font-size: 1.25rem; opacity: 0.8;">
+        <p>Voice commands: Say "Next", "Previous", "Send to device", or "Back"</p>
+    </div>
+</div>
+
+<!-- Screen reader announcements -->
+<div class="sr-only" aria-live="polite" aria-atomic="true">
+    Reading {{ book_title }}, Chapter {{ chapter.number }} of {{ total_chapters }}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Handle chapter sending
+    document.getElementById('send-chapter-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const csrfToken = formData.get('csrfmiddlewaretoken');
+        
+        if (window.voiceNavigator) {
+            window.voiceNavigator.speak('Sending chapter to your braille device. This may take a moment.');
+        }
+        
+        fetch('', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                if (window.voiceNavigator) {
+                    window.voiceNavigator.speak('Chapter successfully sent to braille device in ' + data.total_chunks + ' chunks.');
+                }
+                alert('✅ Chapter sent to braille device!\n' + data.message);
+            } else {
+                if (window.voiceNavigator) {
+                    window.voiceNavigator.speak('Error sending chapter: ' + data.message);
+                }
+                alert('❌ Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            if (window.voiceNavigator) {
+                window.voiceNavigator.speak('Error sending chapter to braille device.');
+            }
+            alert('❌ Error sending chapter');
+        });
+    });
+    
+    // Enhanced voice commands for book navigation
+    if (window.voiceNavigator) {
+        const originalProcessCommand = window.voiceNavigator.processVoiceCommand.bind(window.voiceNavigator);
+        
+        window.voiceNavigator.processVoiceCommand = function(command) {
+            const lowerCommand = command.toLowerCase().trim();
+            
+            // Book-specific commands
+            if (lowerCommand.includes('next chapter') || lowerCommand === 'next') {
+                {% if has_next %}
+                this.speak('Going to next chapter');
+                document.querySelector('input[value="next"]').closest('form').submit();
+                return;
+                {% else %}
+                this.speak('This is the last chapter');
+                return;
+                {% endif %}
+            }
+            
+            if (lowerCommand.includes('previous chapter') || lowerCommand === 'previous' || lowerCommand.includes('back chapter')) {
+                {% if has_previous %}
+                this.speak('Going to previous chapter');
+                document.querySelector('input[value="previous"]').closest('form').submit();
+                return;
+                {% else %}
+                this.speak('This is the first chapter');
+                return;
+                {% endif %}
+            }
+            
+            if (lowerCommand.includes('send to device') || lowerCommand.includes('send chapter')) {
+                this.speak('Sending chapter to braille device');
+                document.getElementById('send-chapter-form').submit();
+                return;
+            }
+            
+            if (lowerCommand.includes('repeat chapter') || lowerCommand === 'repeat') {
+                const chapterContent = document.querySelector('.chapter-content').textContent;
+                this.speak(chapterContent);
+                return;
+            }
+            
+            // Fall back to original command processing
+            originalProcessCommand(command);
+        };
+    }
+</script>
+{% endblock %}
