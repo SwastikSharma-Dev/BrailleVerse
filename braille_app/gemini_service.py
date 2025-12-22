@@ -11,13 +11,13 @@ from django.conf import settings
 import base64
 import json
 
-# Try to import google-generativeai
+# Try to import google-genai (new package)
 try:
-    import google.generativeai as genai
+    from google import genai
     GEMINI_AVAILABLE = True
 except ImportError:
     GEMINI_AVAILABLE = False
-    print("Warning: google-generativeai not installed. Install with: pip install google-generativeai")
+    print("Warning: google-genai not installed. Install with: pip install google-genai")
 
 
 class GeminiService:
@@ -30,11 +30,8 @@ class GeminiService:
         self.api_available = self.api_key and self.api_key != 'YOUR_GEMINI_API_KEY_HERE' and GEMINI_AVAILABLE
         
         if self.api_available:
-            genai.configure(api_key=self.api_key)
-            # Use gemini-2.5-flash (supports both text and vision)
-            self.text_model = genai.GenerativeModel('gemini-2.5-flash')
-            self.vision_model = genai.GenerativeModel('gemini-2.5-flash')
-            print("✓ Gemini AI configured successfully with gemini-2.5-flash")
+            self.client = genai.Client(api_key=self.api_key)
+            print("✓ Gemini AI configured successfully with google-genai")
         else:
             print("✗ Gemini AI not configured - using placeholder responses")
     
@@ -53,12 +50,10 @@ class GeminiService:
             return self._get_placeholder_response(message)
         
         try:
-            # Start chat session if history provided
-            if conversation_history:
-                chat = self.text_model.start_chat(history=conversation_history)
-                response = chat.send_message(message)
-            else:
-                response = self.text_model.generate_content(message)
+            response = self.client.models.generate_content(
+                model='gemini-2.0-flash-exp',
+                contents=message
+            )
             
             return {
                 'status': 'success',
@@ -92,19 +87,22 @@ class GeminiService:
             }
         
         try:
-            # Read and prepare image for Gemini
-            import PIL.Image
-            image = PIL.Image.open(image_path)
+            # Read image file
+            with open(image_path, 'rb') as f:
+                image_data = f.read()
             
-            # Convert image to RGB if needed (Gemini works best with RGB)
-            if image.mode != 'RGB':
-                image = image.convert('RGB')
+            # Create part with image data
+            from google.genai import types
+            image_part = types.Part.from_bytes(
+                data=image_data,
+                mime_type='image/jpeg'
+            )
             
-            # Generate description with timeout handling
-            response = self.vision_model.generate_content([prompt, image])
-            
-            # Wait for response to complete
-            response.resolve()
+            # Generate description
+            response = self.client.models.generate_content(
+                model='gemini-2.0-flash-exp',
+                contents=[image_part, prompt]
+            )
             
             return {
                 'status': 'success',
