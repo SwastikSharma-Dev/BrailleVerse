@@ -51,7 +51,7 @@ class GeminiService:
         
         try:
             response = self.client.models.generate_content(
-                model='gemini-2.0-flash-exp',
+                model='gemini-1.5-flash',
                 contents=message
             )
             
@@ -100,7 +100,7 @@ class GeminiService:
             
             # Generate description
             response = self.client.models.generate_content(
-                model='gemini-2.0-flash-exp',
+                model='gemini-1.5-flash',
                 contents=[image_part, prompt]
             )
             

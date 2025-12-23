@@ -5,8 +5,8 @@
 #include <Adafruit_PWMServoDriver.h>
 
 // ----- WiFi credentials -----
-#define WIFI_SSID "TU"
-#define WIFI_PASSWORD "tu@inet1"
+#define WIFI_SSID "iFiW"
+#define WIFI_PASSWORD "ABCD1234"
 
 // ----- Firebase credentials -----
 #define FIREBASE_HOST "braille-display-b87be-default-rtdb.asia-southeast1.firebasedatabase.app"
